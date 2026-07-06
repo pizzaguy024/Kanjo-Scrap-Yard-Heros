@@ -17,7 +17,11 @@ def init_db():
         username TEXT UNIQUE,
         money INTEGER,
         reputation INTEGER,
-        garage_level INTEGER
+        garage_level INTEGER,
+        energy INTEGER DEFAULT 10,
+        max_energy INTEGER DEFAULT 10,
+        last_energy_reset TEXT,
+        last_daily_event TEXT
     )
     """)
 
@@ -38,6 +42,18 @@ def init_db():
         upgrade_level INTEGER
     )
     """)
+
+    # Adds new columns if your old database already exists
+    for column, column_type in [
+        ("energy", "INTEGER DEFAULT 10"),
+        ("max_energy", "INTEGER DEFAULT 10"),
+        ("last_energy_reset", "TEXT"),
+        ("last_daily_event", "TEXT"),
+    ]:
+        try:
+            cur.execute(f"ALTER TABLE players ADD COLUMN {column} {column_type}")
+        except sqlite3.OperationalError:
+            pass
 
     db.commit()
     db.close()
