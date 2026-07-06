@@ -1,4 +1,5 @@
 import random
+from datetime import date
 from game.database import connect
 
 EVENTS = [
@@ -39,17 +40,30 @@ EVENTS = [
 
 
 def run_daily_event(username):
+    today = date.today().isoformat()
+
     db = connect()
     cur = db.cursor()
 
     player = cur.execute(
-        "SELECT username FROM players WHERE username = ?",
+        "SELECT username, last_daily_event FROM players WHERE username = ?",
         (username,)
     ).fetchone()
 
     if not player:
         db.close()
         return "No player found."
+
+    last_daily_event = player[1]
+
+    if last_daily_event == today:
+        db.close()
+        return """
+📅 Daily Event Already Claimed
+
+You already triggered your daily event today.
+Come back tomorrow.
+"""
 
     event = random.choice(EVENTS)
 
@@ -61,9 +75,10 @@ def run_daily_event(username):
     cur.execute("""
         UPDATE players
         SET money = MAX(money + ?, 0),
-            reputation = reputation + ?
+            reputation = reputation + ?,
+            last_daily_event = ?
         WHERE username = ?
-    """, (money_change, rep_change, username))
+    """, (money_change, rep_change, today, username))
 
     cur.execute("""
         UPDATE cars
