@@ -17,9 +17,12 @@ def init_db():
         username TEXT UNIQUE,
         money INTEGER,
         reputation INTEGER,
-        garage_level INTEGER,
+        garage_level INTEGER DEFAULT 1,
         energy INTEGER DEFAULT 10,
         max_energy INTEGER DEFAULT 10,
+        repair_discount INTEGER DEFAULT 0,
+        race_bonus INTEGER DEFAULT 0,
+        car_slots INTEGER DEFAULT 1,
         last_energy_reset TEXT,
         last_daily_event TEXT
     )
@@ -47,6 +50,9 @@ def init_db():
     for column, column_type in [
         ("energy", "INTEGER DEFAULT 10"),
         ("max_energy", "INTEGER DEFAULT 10"),
+        ("repair_discount", "INTEGER DEFAULT 0"),
+        ("race_bonus", "INTEGER DEFAULT 0"),
+        ("car_slots", "INTEGER DEFAULT 1"),
         ("last_energy_reset", "TEXT"),
         ("last_daily_event", "TEXT"),
     ]:
