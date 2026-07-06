@@ -1,7 +1,7 @@
 from game.database import init_db
 from game.player import create_player, get_player_profile
 from game.races import race_ai
-from game.garage import show_garage, repair_car, upgrade_car
+from game.garage import show_garage, repair_car, upgrade_car, upgrade_garage
 from game.events import run_daily_event
 
 
@@ -14,7 +14,8 @@ def menu():
     print("5. Repair Car")
     print("6. Upgrade Car")
     print("7. Daily Event")
-    print("8. Quit")
+    print("8. Upgrade Garage")
+    print("9. Quit")
 
 
 def main():
@@ -41,6 +42,8 @@ def main():
         elif choice == "7":
             print(run_daily_event(username))
         elif choice == "8":
+            print(upgrade_garage(username))
+        elif choice == "9":
             print("Later, street runner.")
             break
         else:
