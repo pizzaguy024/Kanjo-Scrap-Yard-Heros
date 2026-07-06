@@ -1,5 +1,6 @@
 import random
 from game.database import connect
+from game.player import reset_energy_if_new_day
 
 AI_RACERS = [
     {"name": "Kaito", "car": "Civic EG", "rating": 230},
@@ -10,11 +11,13 @@ AI_RACERS = [
 
 
 def race_ai(username):
+    reset_energy_if_new_day(username)
+
     db = connect()
     cur = db.cursor()
 
     player = cur.execute(
-        "SELECT money, reputation FROM players WHERE username = ?",
+        "SELECT money, reputation, energy FROM players WHERE username = ?",
         (username,)
     ).fetchone()
 
@@ -26,6 +29,17 @@ def race_ai(username):
     if not player or not car:
         db.close()
         return "No car found. Start your player first."
+
+    money, reputation, energy = player
+
+    if energy <= 0:
+        db.close()
+        return """
+⚡ You are out of energy.
+
+Come back tomorrow to race again.
+Daily energy resets once per day.
+"""
 
     ai = random.choice(AI_RACERS)
 
@@ -49,6 +63,11 @@ def race_ai(username):
     oil_loss = random.randint(2, 6)
     engine_damage = random.randint(1, 4)
     condition_loss = random.randint(2, 6)
+
+    cur.execute(
+        "UPDATE players SET energy = energy - 1 WHERE username = ?",
+        (username,)
+    )
 
     cur.execute("""
         UPDATE cars
@@ -80,6 +99,9 @@ Earned:
 ${payout}
 +{rep_gain} Reputation
 
+Energy:
+-{1} Energy
+
 Wear:
 Tires -{tire_loss}%
 Oil -{oil_loss}%
@@ -104,6 +126,9 @@ You lost.
 
 Earned:
 +{rep_gain} Reputation
+
+Energy:
+-{1} Energy
 
 Wear:
 Tires -{tire_loss}%
