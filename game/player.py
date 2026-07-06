@@ -49,12 +49,22 @@ def create_player(username):
     cur.execute("""
         INSERT INTO players (
             username, money, reputation, garage_level,
-            energy, max_energy, last_energy_reset, last_daily_event
+            energy, max_energy, repair_discount, race_bonus, car_slots,
+            last_energy_reset, last_daily_event
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        username, 500, 0, 1,
-        10, 10, today, None
+        username,
+        500,
+        0,
+        1,
+        10,
+        10,
+        0,
+        0,
+        1,
+        today,
+        None
     ))
 
     cur.execute("""
@@ -91,6 +101,7 @@ Rarity: {car['rarity']}
 
 Money: $500
 Reputation: 0
+Garage Level: 1
 Energy: 10/10
 
 Build it. Race it. Survive it.
@@ -104,7 +115,8 @@ def get_player_profile(username):
     cur = db.cursor()
 
     player = cur.execute("""
-        SELECT money, reputation, garage_level, energy, max_energy
+        SELECT money, reputation, garage_level, energy, max_energy,
+               repair_discount, race_bonus, car_slots
         FROM players WHERE username = ?
     """, (username,)).fetchone()
 
@@ -119,15 +131,22 @@ def get_player_profile(username):
 
     db.close()
 
-    money, rep, garage_level, energy, max_energy = player
+    money, rep, garage_level, energy, max_energy, repair_discount, race_bonus, car_slots = player
 
     return f"""
 👤 Driver: {username}
 
 Money: ${money}
 Reputation: {rep}
-Garage Level: {garage_level}
-Energy: {energy}/{max_energy}
+
+Garage:
+Level: {garage_level}
+Car Slots: {car_slots}
+Repair Discount: {repair_discount}%
+Race Payout Bonus: {race_bonus}%
+
+Energy:
+{energy}/{max_energy}
 
 Current Car:
 {car[0]}
