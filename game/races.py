@@ -79,7 +79,15 @@ Daily energy resets once per day.
     """, (tire_loss, oil_loss, engine_damage, condition_loss, username))
 
     if player_score >= ai_score:
-        payout = random.randint(700, 1600)
+       base_payout = random.randint(700, 1600)
+
+race_bonus = cur.execute(
+    "SELECT race_bonus FROM players WHERE username = ?",
+    (username,)
+).fetchone()[0]
+
+bonus_amount = int(base_payout * (race_bonus / 100))
+payout = base_payout + bonus_amount
         rep_gain = random.randint(8, 22)
 
         cur.execute(
@@ -96,7 +104,9 @@ Opponent Car: {ai['car']}
 You won.
 
 Earned:
-${payout}
+Base Payout: ${base_payout}
+Garage Bonus: +${bonus_amount}
+Total: ${payout}
 +{rep_gain} Reputation
 
 Energy:
