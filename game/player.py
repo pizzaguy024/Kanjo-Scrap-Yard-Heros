@@ -1,5 +1,33 @@
+from datetime import date
 from game.database import connect
 from game.cars import random_starter_car
+
+
+def reset_energy_if_new_day(username):
+    today = date.today().isoformat()
+
+    db = connect()
+    cur = db.cursor()
+
+    player = cur.execute(
+        "SELECT max_energy, last_energy_reset FROM players WHERE username = ?",
+        (username,)
+    ).fetchone()
+
+    if not player:
+        db.close()
+        return
+
+    max_energy, last_reset = player
+
+    if last_reset != today:
+        cur.execute(
+            "UPDATE players SET energy = ?, last_energy_reset = ? WHERE username = ?",
+            (max_energy, today, username)
+        )
+        db.commit()
+
+    db.close()
 
 
 def create_player(username):
@@ -16,11 +44,18 @@ def create_player(username):
         return "You already have a profile."
 
     car = random_starter_car()
+    today = date.today().isoformat()
 
-    cur.execute(
-        "INSERT INTO players (username, money, reputation, garage_level) VALUES (?, ?, ?, ?)",
-        (username, 500, 0, 1)
-    )
+    cur.execute("""
+        INSERT INTO players (
+            username, money, reputation, garage_level,
+            energy, max_energy, last_energy_reset, last_daily_event
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        username, 500, 0, 1,
+        10, 10, today, None
+    ))
 
     cur.execute("""
         INSERT INTO cars (
@@ -56,32 +91,35 @@ Rarity: {car['rarity']}
 
 Money: $500
 Reputation: 0
+Energy: 10/10
 
 Build it. Race it. Survive it.
 """
 
 
 def get_player_profile(username):
+    reset_energy_if_new_day(username)
+
     db = connect()
     cur = db.cursor()
 
-    player = cur.execute(
-        "SELECT money, reputation, garage_level FROM players WHERE username = ?",
-        (username,)
-    ).fetchone()
+    player = cur.execute("""
+        SELECT money, reputation, garage_level, energy, max_energy
+        FROM players WHERE username = ?
+    """, (username,)).fetchone()
 
     if not player:
         db.close()
         return "No profile found. Choose Start New Player first."
 
-    car = cur.execute(
-        "SELECT name, rarity, horsepower, handling, grip, reliability, condition FROM cars WHERE owner = ?",
-        (username,)
-    ).fetchone()
+    car = cur.execute("""
+        SELECT name, rarity, horsepower, handling, grip, reliability, condition
+        FROM cars WHERE owner = ?
+    """, (username,)).fetchone()
 
     db.close()
 
-    money, rep, garage_level = player
+    money, rep, garage_level, energy, max_energy = player
 
     return f"""
 👤 Driver: {username}
@@ -89,6 +127,7 @@ def get_player_profile(username):
 Money: ${money}
 Reputation: {rep}
 Garage Level: {garage_level}
+Energy: {energy}/{max_energy}
 
 Current Car:
 {car[0]}
